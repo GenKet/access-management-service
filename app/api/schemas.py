@@ -74,6 +74,8 @@ class AccessRequestOut(BaseModel):
     status: str
     owner_decided_by: int | None = None
     owner_decided_at: datetime | None = None
+    security_decided_by: int | None = None
+    security_decided_at: datetime | None = None
     decision_comment: str | None = None
     provisioning_error: str | None = None
     provisioning: ProvisioningStateOut = ProvisioningStateOut()
@@ -91,6 +93,8 @@ class AccessRequestOut(BaseModel):
             status=request.status,
             owner_decided_by=request.owner_decided_by,
             owner_decided_at=request.owner_decided_at,
+            security_decided_by=request.security_decided_by,
+            security_decided_at=request.security_decided_at,
             decision_comment=request.decision_comment,
             provisioning_error=request.provisioning_error,
             provisioning=ProvisioningStateOut(

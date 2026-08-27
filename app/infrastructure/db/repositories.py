@@ -54,6 +54,8 @@ def _to_request(row: models.AccessRequest) -> entities.AccessRequest:
         status=RequestStatus(row.status),
         owner_decided_by=row.owner_decided_by,
         owner_decided_at=row.owner_decided_at,
+        security_decided_by=row.security_decided_by,
+        security_decided_at=row.security_decided_at,
         decision_comment=row.decision_comment,
         provisioning_error=row.provisioning_error,
         created_at=row.created_at,
@@ -171,6 +173,8 @@ class AccessRequestRepository:
         row.status = request.status
         row.owner_decided_by = request.owner_decided_by
         row.owner_decided_at = request.owner_decided_at
+        row.security_decided_by = request.security_decided_by
+        row.security_decided_at = request.security_decided_at
         row.decision_comment = request.decision_comment
         row.provisioning_error = request.provisioning_error
 
