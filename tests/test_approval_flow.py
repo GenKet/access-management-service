@@ -123,14 +123,17 @@ async def test_stranger_approve_of_decided_request_returns_409_not_403(client, s
 
 
 async def test_concurrent_approve_is_serialized_by_row_lock(client, seeded, db_session):
-    # Независимые пары (заявитель, ресурс): после успешного approve заявка
-    # остаётся occupying и вторую такую же завести нельзя.
+    # Независимые пары (заявитель, ресурс) — чтобы каждая итерация была
+    # чистым запросом, не упирающимся в uq_access_request_occupying от
+    # предыдущей (после успешного approve заявка остаётся occupying).
+    # Ресурсы только normal: у high после одобрения владельцем идёт ещё шаг
+    # security, и задача на этом этапе не создаётся — конкурентность на том
+    # шаге проверяется в tests/test_high_criticality.py.
     scenarios = [
         (ALICE, seeded.gitlab),
         (SEC, seeded.gitlab),
-        (ALICE, seeded.production_db),
-        (SEC, seeded.production_db),
         (ALICE, seeded.broken),
+        (SEC, seeded.broken),
     ]
     for headers, resource in scenarios:
         request_id = await create_request(client, seeded, headers=headers, resource=resource)
