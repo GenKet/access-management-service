@@ -13,6 +13,7 @@ class Criticality(StrEnum):
 
 class RequestStatus(StrEnum):
     PENDING_OWNER_APPROVAL = "PENDING_OWNER_APPROVAL"
+    PENDING_SECURITY_APPROVAL = "PENDING_SECURITY_APPROVAL"
     PROVISIONING = "PROVISIONING"
     ACTIVE = "ACTIVE"
     REJECTED = "REJECTED"
@@ -32,5 +33,10 @@ TERMINAL_STATUSES = frozenset(
 
 # Пара «сотрудник + ресурс» занята, пока запрос в работе или доступ уже выдан.
 OCCUPYING_STATUSES = frozenset(
-    {RequestStatus.PENDING_OWNER_APPROVAL, RequestStatus.PROVISIONING, RequestStatus.ACTIVE}
+    {
+        RequestStatus.PENDING_OWNER_APPROVAL,
+        RequestStatus.PENDING_SECURITY_APPROVAL,
+        RequestStatus.PROVISIONING,
+        RequestStatus.ACTIVE,
+    }
 )
