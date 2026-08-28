@@ -27,6 +27,10 @@ class Resource:
     owner_id: int
     criticality: Criticality
 
+    @property
+    def needs_security_approval(self) -> bool:
+        return self.criticality == Criticality.HIGH
+
     def is_owned_by(self, user: User) -> bool:
         return self.owner_id == user.id
 
@@ -75,6 +79,8 @@ class AccessRequest:
     status: RequestStatus = RequestStatus.PENDING_OWNER_APPROVAL
     owner_decided_by: int | None = None
     owner_decided_at: datetime | None = None
+    security_decided_by: int | None = None
+    security_decided_at: datetime | None = None
     decision_comment: str | None = None
     provisioning_error: str | None = None
     id: int | None = None
@@ -93,23 +99,39 @@ class AccessRequest:
         """Одобряет текущий шаг. True — пора запускать выдачу."""
         # Статус проверяется раньше прав: повторное одобрение — конфликт
         # состояния, а не нехватка прав.
-        if self.status != RequestStatus.PENDING_OWNER_APPROVAL:
-            raise InvalidTransition(self.status, "согласован")
+        if self.status == RequestStatus.PENDING_OWNER_APPROVAL:
+            self._ensure_owner(actor, resource)
+            self.owner_decided_by = actor.id
+            self.owner_decided_at = _now()
+            self.decision_comment = comment
+            if resource.needs_security_approval:
+                self.status = RequestStatus.PENDING_SECURITY_APPROVAL
+                return False
+            self.status = RequestStatus.PROVISIONING
+            return True
 
-        self._ensure_owner(actor, resource)
-        self.owner_decided_by = actor.id
-        self.owner_decided_at = _now()
-        self.decision_comment = comment
-        self.status = RequestStatus.PROVISIONING
-        return True
+        if self.status == RequestStatus.PENDING_SECURITY_APPROVAL:
+            self._ensure_security(actor)
+            self.security_decided_by = actor.id
+            self.security_decided_at = _now()
+            self.decision_comment = comment
+            self.status = RequestStatus.PROVISIONING
+            return True
+
+        raise InvalidTransition(self.status, "согласован")
 
     def reject(self, actor: User, resource: Resource, comment: str | None = None) -> None:
-        if self.status != RequestStatus.PENDING_OWNER_APPROVAL:
+        if self.status == RequestStatus.PENDING_OWNER_APPROVAL:
+            self._ensure_owner(actor, resource)
+            self.owner_decided_by = actor.id
+            self.owner_decided_at = _now()
+        elif self.status == RequestStatus.PENDING_SECURITY_APPROVAL:
+            self._ensure_security(actor)
+            self.security_decided_by = actor.id
+            self.security_decided_at = _now()
+        else:
             raise InvalidTransition(self.status, "отклонён")
 
-        self._ensure_owner(actor, resource)
-        self.owner_decided_by = actor.id
-        self.owner_decided_at = _now()
         self.status = RequestStatus.REJECTED
         self.decision_comment = comment
 
@@ -126,3 +148,7 @@ class AccessRequest:
             raise NotAllowed("Решение по запросу принимает владелец ресурса")
         if self.user_id == actor.id:
             raise NotAllowed("Нельзя согласовывать собственный запрос")
+
+    def _ensure_security(self, actor: User) -> None:
+        if not actor.is_security:
+            raise NotAllowed("Этот шаг согласования выполняет security-роль")

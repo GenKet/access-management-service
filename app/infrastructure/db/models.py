@@ -74,6 +74,8 @@ class AccessRequest(Base):
 
     owner_decided_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     owner_decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    security_decided_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    security_decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     decision_comment: Mapped[str | None] = mapped_column(Text)
     provisioning_error: Mapped[str | None] = mapped_column(Text)
 
